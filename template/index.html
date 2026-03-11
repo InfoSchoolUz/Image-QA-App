@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VisionAsk — Rasmdan Savol-Javob</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink: #0a0a0f;
+      --paper: #f5f3ee;
+      --accent: #ff4f00;
+      --gold: #e8c84a;
+      --muted: #8a8880;
+      --card: #ffffff;
+      --border: #dddad4;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* NOISE TEXTURE */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* HEADER */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 3rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--paper);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.03em;
+    }
+    .logo span { color: var(--accent); }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.8rem;
+      border: 1px solid var(--ink);
+      border-radius: 2rem;
+      color: var(--muted);
+    }
+
+    /* HERO */
+    .hero {
+      padding: 5rem 3rem 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .hero-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
+      line-height: 1.0;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-text h1 em {
+      font-style: normal;
+      color: var(--accent);
+      display: block;
+    }
+
+    .hero-text p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.7;
+      font-weight: 300;
+      max-width: 38ch;
+    }
+
+    .powered-by {
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .powered-by::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--muted);
+    }
+
+    /* UPLOAD CARD */
+    .upload-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1.2rem;
+      padding: 2rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 0.8rem;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      background: var(--paper);
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: #fff8f5;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .drop-text {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    .drop-text strong {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    /* IMAGE PREVIEW */
+    #preview-container {
+      display: none;
+      margin-top: 1rem;
+      border-radius: 0.8rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #preview-img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* QUESTION INPUT */
+    .question-wrap {
+      margin-top: 1.2rem;
+      position: relative;
+    }
+
+    .question-wrap label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .question-wrap textarea {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 0.6rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--ink);
+      background: var(--paper);
+      resize: none;
+      height: 90px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .question-wrap textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .submit-btn {
+      margin-top: 1.2rem;
+      width: 100%;
+      padding: 1rem;
+      background: var(--ink);
+      color: white;
+      border: none;
+      border-radius: 0.6rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ANSWER SECTION */
+    .answer-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 3rem 5rem;
+    }
+
+    .answer-box {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1.2rem;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+      animation: slideUp 0.4s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .answer-header {
+      background: var(--ink);
+      color: white;
+      padding: 1rem 1.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .answer-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .answer-question {
+      padding: 1.2rem 1.8rem;
+      background: #fafaf8;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .answer-question strong {
+      color: var(--ink);
+      font-style: normal;
+      font-weight: 500;
+    }
+
+    .answer-body {
+      padding: 1.8rem;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--ink);
+      font-weight: 300;
+    }
+
+    /* LOADING */
+    .loading-state {
+      display: none;
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* EXAMPLES */
+    .examples {
+      margin-top: 1rem;
+    }
+
+    .examples-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .example-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .chip {
+      font-size: 0.78rem;
+      padding: 0.3rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 2rem;
+      cursor: pointer;
+      transition: all 0.18s;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #fff8f5;
+    }
+
+    /* ERROR */
+    .error-msg {
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-top: 0.8rem;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; gap: 2rem; padding: 3rem 1.5rem 2rem; }
+      .answer-section { padding: 0 1.5rem 3rem; }
+      header { padding: 1rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vision<span>Ask</span></div>
+  <div class="badge">Amazon Nova · AI Hackathon</div>
+</header>
+
+<section class="hero">
+  <div class="hero-text">
+    <h1>Rasmga <em>savol ber,</em> javob ol.</h1>
+    <p>Istalgan rasmni yuklang va unga haqida xohlagan savolingizni bering. Amazon Nova Pro sun'iy intellekti rasmni chuqur tahlil qilib, aniq javob beradi.</p>
+    <div class="powered-by">Amazon Nova Pro tomonidan ishga tushirilgan</div>
+  </div>
+
+  <div class="upload-card">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="imageInput" accept="image/*" />
+      <span class="drop-icon">🖼️</span>
+      <div class="drop-text">
+        <strong>Rasmni bu yerga tashlang</strong><br>
+        yoki bosib tanlang · PNG, JPG, WEBP
+      </div>
+    </div>
+
+    <div id="preview-container">
+      <img id="preview-img" src="" alt="Preview" />
+      <button class="remove-btn" id="removeBtn">✕</button>
+    </div>
+
+    <div class="question-wrap">
+      <label>Savolingiz</label>
+      <textarea id="questionInput" placeholder="Bu rasmda nima bor? Ranglar nima? Yozuvni o'qi..."></textarea>
+      <div class="examples">
+        <div class="examples-label">Tezkor savollar</div>
+        <div class="example-chips">
+          <span class="chip" onclick="setQ('Bu rasmda nima tasvirlangan?')">Nima bor?</span>
+          <span class="chip" onclick="setQ('Rasmdagi matnni o\'qib ber')">Matn o'qi</span>
+          <span class="chip" onclick="setQ('Bu rasmni batafsil tasvirla')">Batafsil</span>
+          <span class="chip" onclick="setQ('Rasmdagi ranglarni sanab ber')">Ranglar</span>
+          <span class="chip" onclick="setQ('Bu rasm qayerda olingan bo\'lishi mumkin?')">Joyi?</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitQuery()">
+      <span>Tahlil qilish</span> <span>→</span>
+    </button>
+  </div>
+</section>
+
+<section class="answer-section">
+  <div class="loading-state" id="loadingState">
+    <div class="spinner"></div>
+    <p>Nova rasmni tahlil qilmoqda...</p>
+  </div>
+
+  <div class="answer-box" id="answerBox">
+    <div class="answer-header">
+      <div class="answer-dot"></div>
+      Nova javobi
+    </div>
+    <div class="answer-question" id="answerQuestion"></div>
+    <div class="answer-body" id="answerBody"></div>
+  </div>
+</section>
+
+<script>
+  const dropZone = document.getElementById('dropZone');
+  const imageInput = document.getElementById('imageInput');
+  const previewContainer = document.getElementById('preview-container');
+  const previewImg = document.getElementById('preview-img');
+  const removeBtn = document.getElementById('removeBtn');
+  const questionInput = document.getElementById('questionInput');
+  const submitBtn = document.getElementById('submitBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const loadingState = document.getElementById('loadingState');
+  const answerBox = document.getElementById('answerBox');
+  const answerQuestion = document.getElementById('answerQuestion');
+  const answerBody = document.getElementById('answerBody');
+
+  let selectedFile = null;
+
+  imageInput.addEventListener('change', (e) => {
+    handleFile(e.target.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  removeBtn.addEventListener('click', () => {
+    selectedFile = null;
+    previewImg.src = '';
+    previewContainer.style.display = 'none';
+    dropZone.style.display = 'flex';
+    imageInput.value = '';
+  });
+
+  function handleFile(file) {
+    if (!file) return;
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      previewImg.src = e.target.result;
+      previewContainer.style.display = 'block';
+      dropZone.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setQ(text) {
+    questionInput.value = text;
+    questionInput.focus();
+  }
+
+  async function submitQuery() {
+    hideError();
+    if (!selectedFile) { showError('Iltimos, avval rasm tanlang'); return; }
+    const question = questionInput.value.trim() || 'Bu rasmda nima ko\'ryapsiz? Batafsil tushuntiring.';
+
+    submitBtn.disabled = true;
+    answerBox.style.display = 'none';
+    loadingState.style.display = 'block';
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+    formData.append('question', question);
+
+    try {
+      const res = await fetch('/analyze', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      loadingState.style.display = 'none';
+
+      if (data.error) {
+        showError(data.error);
+      } else {
+        answerQuestion.innerHTML = `<strong>Savol:</strong> ${data.question}`;
+        answerBody.textContent = data.answer;
+        answerBox.style.display = 'block';
+        answerBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    } catch (err) {
+      loadingState.style.display = 'none';
+      showError('Server xatosi. Iltimos qayta urinib ko\'ring.');
+    }
+
+    submitBtn.disabled = false;
+  }
+
+  function showError(msg) { errorMsg.textContent = msg; errorMsg.style.display = 'block'; }
+  function hideError() { errorMsg.style.display = 'none'; }
+</script>
+</body>
+</html>
